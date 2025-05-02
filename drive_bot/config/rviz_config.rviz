@@ -1,0 +1,44 @@
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/RobotModel
+      Enabled: true
+      Name: RobotModel
+      Value: true
+      Visual Enabled: true
+      Collision Enabled: false
+      Robot Description: robot_description
+    - Class: rviz_default_plugins/LaserScan
+      Enabled: true
+      Name: LaserScan
+      Topic: /scan
+      Size (m): 0.05
+      Color: 255; 0; 0
+      Value: true
+    - Class: rviz_default_plugins/Pose
+      Enabled: true
+      Name: Goal Pose
+      Topic: /goal_pose
+      Arrow Length: 0.5
+      Head Length: 0.1
+      Head Radius: 0.05
+      Shaft Length: 0.4
+      Shaft Radius: 0.02
+      Color: 0; 255; 0
+  Enabled: true
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/SetGoal
+      Topic: /goal_pose
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/TopDownOrtho
+      Distance: 10
+      Yaw: 0
+      Pitch: 1.57
+      Focal Point: [0, 0, 0]
+    Saved: []
