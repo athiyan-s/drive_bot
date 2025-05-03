@@ -1,20 +1,28 @@
 Visualization Manager:
   Class: ""
   Displays:
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Marker Scale: 0.5
+      Name: TF
+    - Class: rviz_default_plugins/Odometry
+      Enabled: true
+      Name: Odometry
+      Topic: /odom
+      Keep: 100
+      Covariance: true
     - Class: rviz_default_plugins/RobotModel
       Enabled: true
       Name: RobotModel
-      Value: true
+      Robot Description: robot_description
       Visual Enabled: true
       Collision Enabled: false
-      Robot Description: robot_description
     - Class: rviz_default_plugins/LaserScan
       Enabled: true
       Name: LaserScan
       Topic: /scan
       Size (m): 0.05
       Color: 255; 0; 0
-      Value: true
     - Class: rviz_default_plugins/Pose
       Enabled: true
       Name: Goal Pose

@@ -1,91 +1,51 @@
 #!/usr/bin/env python3
+"""Launch file for simulating a differential drive robot with navigation in Gazebo."""
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, DeclareLaunchArgument, TimerAction
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
+    """Generate the launch description for the simulation."""
     package_name = 'drive_bot'
     pkg_share = get_package_share_directory(package_name)
 
-    # Declare launch arguments
-    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    # Launch arguments
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    gui = LaunchConfiguration('gui')
 
-    # Paths to files
+    # File paths
     world_file = os.path.join(pkg_share, 'worlds', 'simple_world.world')
     urdf_file = os.path.join(pkg_share, 'urdf', 'drive_bot.urdf')
-    rviz_config = os.path.join(pkg_share, 'config', 'rviz_config.rviz')
-    controller_config = os.path.join(pkg_share, 'config', 'controllers.yaml')
 
-    # Gazebo launch with additional parameters for gazebo_ros2_control
+    # Gazebo launch
     gazebo = ExecuteProcess(
-        cmd=['gazebo', '--verbose', '-s', 'libgazebo_ros_factory.so', world_file, '-s', 'libgazebo_ros2_control.so'],
+        cmd=['gazebo', '--verbose', '-s', 'libgazebo_ros_init.so', '-s', 'libgazebo_ros_factory.so', world_file],
         output='screen',
-        additional_env={'GAZEBO_MODEL_PATH': os.path.join(pkg_share, 'models')}
+        additional_env={'GAZEBO_MODEL_PATH': os.path.join(pkg_share, 'models')},
+        condition=IfCondition(gui)
     )
 
     # Spawn robot
     spawn_entity = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-entity', 'drive_bot', '-file', urdf_file, '-x', '0', '-y', '0', '-z', '0'],
+        arguments=['-entity', 'drive_bot', '-file', urdf_file, '-x', '0', '-y', '0', '-z', '0.1'],
         output='screen',
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
     # Robot state publisher
+    with open(urdf_file, 'r') as infp:
+        robot_desc = infp.read()
     robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
-        parameters=[{'use_sim_time': use_sim_time, 'robot_description': open(urdf_file).read()}],
-        output='screen'
-    )
-
-    # Controller manager
-    controller_manager = Node(
-        package='controller_manager',
-        executable='ros2_control_node',
-        parameters=[controller_config, {'use_sim_time': use_sim_time}],
-        output='screen',
-        remappings=[
-            ('/diff_drive_controller/cmd_vel', '/cmd_vel'),
-            ('/diff_drive_controller/odom', '/odom')
-        ]
-    )
-
-    # Spawn controllers with delay
-    spawn_diff_drive_controller = TimerAction(
-        period=15.0,
-        actions=[
-            Node(
-                package='controller_manager',
-                executable='spawner',
-                arguments=['diff_drive_controller', '--controller-manager', '/controller_manager'],
-                output='screen'
-            )
-        ]
-    )
-
-    spawn_joint_state_broadcaster = TimerAction(
-        period=15.0,
-        actions=[
-            Node(
-                package='controller_manager',
-                executable='spawner',
-                arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
-                output='screen'
-            )
-        ]
-    )
-
-    # RViz
-    rviz = Node(
-        package='rviz2',
-        executable='rviz2',
-        arguments=['-d', rviz_config],
-        parameters=[{'use_sim_time': use_sim_time}],
+        parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
         output='screen'
     )
 
@@ -99,13 +59,18 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation time'),
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='true',
+            description='Use simulation (Gazebo) clock if true'
+        ),
+        DeclareLaunchArgument(
+            'gui',
+            default_value='true',
+            description='Set to "false" to run Gazebo headless'
+        ),
         gazebo,
-        spawn_entity,
         robot_state_publisher,
-        controller_manager,
-        spawn_diff_drive_controller,
-        spawn_joint_state_broadcaster,
-        rviz,
+        spawn_entity,
         bug_navigation_node
     ])
